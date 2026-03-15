@@ -44,8 +44,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (docTypeSelect.value === 'it_letter') {
                 configGroup.style.display = 'block';
                 fileGroup.style.display = 'block';
-                uploadLabel.textContent = 'Upload Image Template (PNG/JPG)';
-                fileInput.accept = 'image/png, image/jpeg';
+                uploadLabel.textContent = 'Upload Template (PNG, JPG, or PDF from CamScanner)';
+                fileInput.accept = 'image/png, image/jpeg, application/pdf';
                 fileInput.required = true;
                 submitBtn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles" style="margin-right: 8px;"></i> Upload Template & Configure';
             } else {
