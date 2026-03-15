@@ -71,7 +71,11 @@
 
             if (adminId && pass) {
                 try {
-                    const baseUrl = window.location.protocol === 'file:' ? 'http://localhost:3000' : '';
+                    const getBaseUrl = () => {
+                        if (window.location.port === '3000' || window.location.port === '') return '';
+                        return 'http://localhost:3000';
+                    };
+                    const baseUrl = getBaseUrl();
                     const response = await fetch(baseUrl + '/api/login', {
                         method: 'POST',
                         headers: {

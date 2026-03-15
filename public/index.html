@@ -62,7 +62,8 @@
                 btn.textContent = 'Verifying...';
                 try {
                     const getBaseUrl = () => {
-                        if (window.location.port === '3000') return '';
+                        // On Render, we use relative paths (port will be empty or 80/443)
+                        if (window.location.port === '3000' || window.location.port === '') return '';
                         return 'http://localhost:3000';
                     };
                     const baseUrl = getBaseUrl();
