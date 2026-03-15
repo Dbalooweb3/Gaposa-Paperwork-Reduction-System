@@ -1,0 +1,22 @@
+{
+    "name": "gaposa-paperwork-reduction-system",
+    "version": "1.0.0",
+    "description": "Student Paperwork & Info System for GAPOSA",
+    "main": "backend/server.js",
+    "scripts": {
+        "start": "node backend/server.js",
+        "dev": "node backend/server.js"
+    },
+    "dependencies": {
+        "cookie-parser": "^1.4.6",
+        "cors": "^2.8.5",
+        "csurf": "^1.11.0",
+        "express": "^4.18.2",
+        "express-validator": "^7.0.1",
+        "helmet": "^7.1.0",
+        "jimp": "^0.16.1",
+        "pg": "^8.11.3",
+        "puppeteer": "^24.39.1",
+        "sharp": "^0.34.5"
+    }
+}

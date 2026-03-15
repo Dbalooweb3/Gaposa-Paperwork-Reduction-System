@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GAPOSA Paperwork System - Admin Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* Admin specific overrides */
+        :root {
+            --primary: #0f766e;
+            /* Teal for Admin */
+            --primary-light: #14b8a6;
+            --secondary: #f59e0b;
+        }
+
+        .blob-1 {
+            background: rgba(15, 118, 110, 0.6);
+        }
+    </style>
+</head>
+
+<body class="admin-theme">
+
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="login-container">
+        <div class="logo-container">
+            <img src="logo.png" alt="GAPOSA Logo" class="logo-img">
+            <h1>Admin Access</h1>
+            <p class="subtitle">GAPOSA Paperwork Management</p>
+        </div>
+
+        <form id="adminLoginForm">
+            <div class="input-group">
+                <label for="adminId">Staff ID / Username</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-user-tie"></i>
+                    <input type="text" id="adminId" placeholder="e.g. STF-001" required>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="adminPass">Password</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" id="adminPass" placeholder="••••••••" required>
+                </div>
+            </div>
+
+            <button type="submit" class="login-btn">
+                Access Dashboard <i class="fa-solid fa-arrow-right" style="margin-left: 8px;"></i>
+            </button>
+        </form>
+
+        <div class="portal-switch">
+            Are you a student? <br>
+            <a href="index.html">Go to Student Portal</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('adminLoginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const adminId = document.getElementById('adminId').value;
+            const pass = document.getElementById('adminPass').value;
+
+            if (adminId && pass) {
+                try {
+                    const baseUrl = window.location.protocol === 'file:' ? 'http://localhost:3000' : '';
+                    const response = await fetch(baseUrl + '/api/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            username: adminId,
+                            password: pass,
+                            role: 'admin'
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        localStorage.setItem('adminId', data.user.username);
+                        localStorage.setItem('userType', 'admin');
+                        window.location.href = 'admin-dashboard.html';
+                    } else {
+                        alert("SERVER REJECTION: " + (data.message || 'Login failed. Please check your credentials.'));
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('NETWORK ERROR: ' + error.message + '\n\nPlease ensure your terminal is still running: npm start');
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

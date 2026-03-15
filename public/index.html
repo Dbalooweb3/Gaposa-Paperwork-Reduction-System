@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GAPOSA Paperwork System - Student Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <div class="login-container">
+        <div class="logo-container">
+            <img src="logo.png" alt="GAPOSA Logo" class="logo-img">
+            <h1>GAPOSA Portal</h1>
+            <p class="subtitle">Student Paperwork & Info System</p>
+        </div>
+
+        <form id="studentLoginForm">
+            <div class="input-group">
+                <label for="setUsername">Username (Matric Number)</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-id-card"></i>
+                    <input type="text" id="setUsername" placeholder="e.g. F/HD/20/12345" required>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label for="setPassword">Password (Surname)</label>
+                <div class="input-wrapper">
+                    <i class="fa-solid fa-lock"></i>
+                    <input type="password" id="setPassword" placeholder="e.g. Ogunlesi" required>
+                </div>
+            </div>
+
+            <button type="submit" class="login-btn">
+                Login to Gateway <i class="fa-solid fa-arrow-right" style="margin-left: 8px;"></i>
+            </button>
+        </form>
+
+        <div class="portal-switch">
+            Are you a school administrator? <br>
+            <a href="admin.html">Go to Admin Portal</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('studentLoginForm').addEventListener('submit', async function (e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const username = document.getElementById('setUsername').value;
+            const password = document.getElementById('setPassword').value;
+
+            if (username && password) {
+                btn.disabled = true;
+                btn.textContent = 'Verifying...';
+                try {
+                    const getBaseUrl = () => {
+                        if (window.location.port === '3000') return '';
+                        return 'http://localhost:3000';
+                    };
+                    const baseUrl = getBaseUrl();
+                    const response = await fetch(baseUrl + '/api/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            username: username,
+                            password: password.toLowerCase(), // we will store surnames in lower case for consistency 
+                            role: 'student'
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        localStorage.setItem('userType', 'student');
+                        localStorage.setItem('matricNumber', data.user.matric_number);
+                        localStorage.setItem('studentName', data.user.name);
+                        localStorage.setItem('department', data.user.department || 'COMPUTER SCIENCE');
+                        window.location.href = 'dashboard.html';
+                    } else {
+                        alert("SERVER REJECTION: " + (data.message || 'Login failed. Please check your credentials.'));
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert("NETWORK ERROR: Could not connect to the school verification server.");
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Login to Gateway <i class="fa-solid fa-arrow-right" style="margin-left: 8px;"></i>';
+                }
+            }
+        });
+    </script>
+</body>
+
+</html>

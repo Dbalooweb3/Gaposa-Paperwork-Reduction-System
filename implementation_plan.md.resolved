@@ -1,0 +1,47 @@
+# Secure Backend Implementation Plan
+
+We will build the backend using **Node.js (Express)** and **PostgreSQL**. The primary focus is security, specifically mitigating SQL Injection, Cross-Site Scripting (XSS), and Cross-Site Request Forgery (CSRF). 
+
+## User Review Required
+
+Please review the proposed security measures and architecture. Let me know if you would like me to proceed with scaffolding this setup. Note: You will need to install PostgreSQL on your machine locally (if not already installed) to fully run the database eventually.
+
+## Proposed Changes
+
+We will create a `backend` folder inside your `school_paperwork_system` project to separate the server logic from the frontend.
+
+### Security Defenses We Will Implement:
+
+1.  **SQL Injection Prevention:**
+    *   We will use the `pg` library with parameterized queries exclusively. By separating the SQL string from the parameters, the database driver ensures inputs are never treated as executable code.
+2.  **Cross-Site Scripting (XSS) Prevention:**
+    *   We will use `helmet` to set secure HTTP headers (like Content Security Policy) to restrict where scripts can be loaded or executed.
+    *   We will use `express-validator` to strictly validate and sanitize all incoming request bodies and query parameters.
+3.  **Cross-Site Request Forgery (CSRF) Prevention:**
+    *   We will implement the `csurf` middleware (or a modern equivalent like double-submit cookies) alongside `cookie-parser`. This generates a unique, cryptographically strong token for the client that must be included in state-changing requests (POST, PUT, DELETE).
+
+### Project Files
+
+#### [NEW] school_paperwork_system/backend/package.json
+Configuration file for the Node.js project containing all necessary security and server dependencies (`express`, `pg`, `helmet`, `csurf`, `express-validator`, `cors`, `cookie-parser`).
+
+#### [NEW] school_paperwork_system/backend/server.js
+The main entry point for the Express application. It will configure:
+- Global middleware (`helmet`, `cors`, body parsers, cookie parsers).
+- The CSRF protection mechanism.
+- API route mounting.
+- Global error handling.
+
+#### [NEW] school_paperwork_system/backend/db.js
+The PostgreSQL connection pool configuration. It will export methods to execute database queries safely using parameterized inputs.
+
+#### [NEW] school_paperwork_system/backend/routes/api.js
+The API routes (e.g., login, submit document). This file will utilize `express-validator` chains to ensure every piece of input (like Matric Number or Staff ID) is checked and sanitized before hitting the database logic.
+
+## Verification Plan
+
+### Automated/Manual Verification
+1. We will run the Node.js server to ensure it starts without errors.
+2. We will inspect the HTTP headers returned by the server to verify `helmet` is active.
+3. We will attempt a POST request without a CSRF token to verify the server correctly blocks it with a "Forbidden" error.
+4. We will review the SQL query structures to ensure strict reliance on parameterized queries (`$1`, `$2`).
