@@ -12,7 +12,9 @@
 
 <body class="dashboard-body">
 
-    <aside class="sidebar">
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="window.toggleSidebar()"></div>
+
+    <aside class="sidebar" id="mainSidebar">
         <div class="sidebar-header">
             <img src="logo.png" alt="GAPOSA Logo" class="logo-img logo-sidebar">
             <h2>GAPOSA Portal</h2>
@@ -48,6 +50,9 @@
 
     <main class="main-content">
         <div class="topbar">
+            <button class="mobile-menu-btn" onclick="window.toggleSidebar()" style="display: none;">
+                <i class="fa-solid fa-bars"></i>
+            </button>
             <h1>Paperwork Assistant</h1>
             <div style="display: flex; align-items: center; gap: 20px;">
                 <button onclick="window.toggleTheme()"

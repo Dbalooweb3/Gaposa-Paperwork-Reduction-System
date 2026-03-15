@@ -201,14 +201,19 @@ window.handleAdminSubmit = async function (e) {
         const file = fileInput.files[0];
         let base64 = "";
 
-        // If the file is a PDF, we must render it to a Canvas first to get an image for our email/PDF system.
-        if (file.type === 'application/pdf' && docTypeStr === 'it_letter') {
+        const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+
+        // If the file is a PDF, we must render it to a Canvas first
+        if (isPDF && docTypeStr === 'it_letter') {
+            if (typeof pdfjsLib === 'undefined') {
+                throw new Error("PDF processing library not loaded. Please refresh the page.");
+            }
             const arrayBuffer = await file.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
             const page = await pdf.getPage(1);
             
             // Standard A4 aspect ratio scaling
-            const viewport = page.getViewport({ scale: 3.0 }); // High scale for clarity
+            const viewport = page.getViewport({ scale: 2.5 }); // Balanced scale for quality/memory
             const canvas = document.createElement('canvas');
             canvas.width = viewport.width;
             canvas.height = viewport.height;
@@ -629,7 +634,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let base64 = "";
         try {
-            if (file.type === 'application/pdf') {
+            const isPDF = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+            
+            if (isPDF) {
+                if (typeof pdfjsLib === 'undefined') {
+                    throw new Error("PDF library not ready. Wait a second and try again.");
+                }
                 const arrayBuffer = await file.arrayBuffer();
                 const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
                 const page = await pdf.getPage(1);
@@ -640,6 +650,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 const ctx = canvas.getContext('2d');
                 await page.render({ canvasContext: ctx, viewport: viewport }).promise;
                 base64 = canvas.toDataURL('image/jpeg', 0.8);
+            } else if (docTypeSelect.value === 'it_letter') {
+                // For images used as templates, we should also normalize them to A4 ratio for the preview
+                // to avoid stretching and layout scroll issues reported by user.
+                base64 = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onload = (re) => {
+                        const img = new Image();
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            // Use A4 aspect ratio for normalization (approx 2.5x scale of 794x1123 for quality)
+                            canvas.width = 1985; 
+                            canvas.height = 2807;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0, 1985, 2807);
+                            resolve(canvas.toDataURL('image/jpeg', 0.8));
+                        };
+                        img.src = re.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                });
             } else {
                 base64 = await new Promise((resolve) => {
                     const reader = new FileReader();
@@ -885,3 +915,12 @@ window.updateDraggablePositionsFromInputs = updateDraggablePositionsFromInputs;
         document.getElementById('previewContent').innerHTML = '';
     };
 });
+// Mobile Sidebar Toggle
+window.toggleSidebar = function() {
+    const sidebar = document.getElementById('mainSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+};

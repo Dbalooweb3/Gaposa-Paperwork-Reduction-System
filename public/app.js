@@ -625,3 +625,12 @@ function showBrowserNotif(title, body) {
         });
     }
 }
+// Mobile Sidebar Toggle
+window.toggleSidebar = function() {
+    const sidebar = document.getElementById('mainSidebar');
+    const overlay = document.getElementById('sidebarOverlay');
+    if (sidebar && overlay) {
+        sidebar.classList.toggle('active');
+        overlay.classList.toggle('active');
+    }
+};
