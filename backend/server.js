@@ -177,7 +177,7 @@ app.get('/api/system-sync', async (req, res) => {
 
                 // Derive password from last name or use matric number as fallback
                 const nameParts = s.name.trim().split(' ');
-                const defaultPassword = s.password || nameParts[nameParts.length - 1].toLowerCase() || username;
+                const defaultPassword = s.password || nameParts[0].toLowerCase() || username;
                 const department = s.department || 'NOT SET';
 
                 const userRes = await db.query(`
