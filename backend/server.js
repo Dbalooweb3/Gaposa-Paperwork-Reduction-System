@@ -155,11 +155,11 @@ app.get('/api/system-sync', async (req, res) => {
             );
         `);
 
-        // 2. Add Default Admin if not exists
+        // 2. Add/Update Default Admin
         await db.query(`
             INSERT INTO users (username, password, role)
             VALUES ('admin', 'admin123', 'admin')
-            ON CONFLICT (username) DO NOTHING
+            ON CONFLICT (username) DO UPDATE SET password = EXCLUDED.password
         `);
 
         // 3. Sync Students from JSON
@@ -171,12 +171,21 @@ app.get('/api/system-sync', async (req, res) => {
         if (fs.existsSync(studentsPath)) {
             const studentsData = JSON.parse(fs.readFileSync(studentsPath, 'utf8'));
             for (const s of studentsData) {
+                // Determine a safe username and password
+                const username = (s.matricNumber || '').trim();
+                if (!username) continue; // Skip if no matric number
+
+                // Derive password from last name or use matric number as fallback
+                const nameParts = s.name.trim().split(' ');
+                const defaultPassword = s.password || nameParts[nameParts.length - 1].toLowerCase() || username;
+                const department = s.department || 'NOT SET';
+
                 const userRes = await db.query(`
                     INSERT INTO users (username, password, role)
                     VALUES ($1, $2, 'student')
                     ON CONFLICT (username) DO UPDATE SET password = EXCLUDED.password
                     RETURNING id
-                `, [s.matric_number, s.password]);
+                `, [username, defaultPassword]);
                 
                 const userId = userRes.rows[0].id;
 
@@ -185,7 +194,7 @@ app.get('/api/system-sync', async (req, res) => {
                     VALUES ($1, $2, $3, $4)
                     ON CONFLICT (matric_number) DO UPDATE 
                     SET name = EXCLUDED.name, department = EXCLUDED.department, user_id = EXCLUDED.user_id
-                `, [userId, s.name, s.matric_number, s.department]);
+                `, [userId, s.name.trim(), username, department]);
                 addedCount++;
             }
         }
