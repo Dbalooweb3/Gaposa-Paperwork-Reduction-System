@@ -110,6 +110,55 @@ app.post('/api/student-profile-v2', async (req, res) => {
     }
 });
 
+// --- SYSTEM SYNC (For Render Free Tier) ---
+app.get('/api/system-sync', async (req, res) => {
+    try {
+        console.log('[SYS] Manual Sync Triggered...');
+        const fs = require('fs');
+        const path = require('path');
+        const studentsPath = path.join(__dirname, '../students-list.json');
+        
+        if (!fs.existsSync(studentsPath)) {
+            return res.status(404).json({ success: false, message: 'students-list.json not found' });
+        }
+
+        const studentsData = JSON.parse(fs.readFileSync(studentsPath, 'utf8'));
+        let addedCount = 0;
+
+        for (const s of studentsData) {
+            // 1. Create/Update User entry for login
+            const userRes = await db.query(`
+                INSERT INTO users (username, password, role)
+                VALUES ($1, $2, 'student')
+                ON CONFLICT (username) DO UPDATE 
+                SET password = EXCLUDED.password
+                RETURNING id
+            `, [s.matric_number, s.password]);
+            
+            const userId = userRes.rows[0].id;
+
+            // 2. Create/Update Student profile
+            await db.query(`
+                INSERT INTO students (user_id, name, matric_number, department)
+                VALUES ($1, $2, $3, $4)
+                ON CONFLICT (matric_number) DO UPDATE 
+                SET name = EXCLUDED.name, department = EXCLUDED.department, user_id = EXCLUDED.user_id
+            `, [userId, s.name, s.matric_number, s.department]);
+            
+            addedCount++;
+        }
+
+        res.json({ 
+            success: true, 
+            message: `Cloud database sync complete! Populated ${addedCount} student accounts.`,
+            instruction: 'You can now log in to the portal.'
+        });
+    } catch (err) {
+        console.error('Sync Error:', err);
+        res.status(500).json({ success: false, message: err.message });
+    }
+});
+
 app.use('/api', apiRoutes);
 
 // Serve static frontend files from the public directory
