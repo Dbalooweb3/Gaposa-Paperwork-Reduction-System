@@ -111,51 +111,98 @@ app.post('/api/student-profile-v2', async (req, res) => {
 });
 
 // --- SYSTEM SYNC (For Render Free Tier) ---
+// --- SYSTEM SYNC (For Render Free Tier) ---
 app.get('/api/system-sync', async (req, res) => {
     try {
-        console.log('[SYS] Manual Sync Triggered...');
+        console.log('[SYS] Full System Initialization Triggered...');
+        
+        // 1. Create Tables if they don't exist
+        await db.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id SERIAL PRIMARY KEY,
+                username TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                role TEXT NOT NULL DEFAULT 'student'
+            );
+
+            CREATE TABLE IF NOT EXISTS students (
+                id SERIAL PRIMARY KEY,
+                user_id INTEGER REFERENCES users(id),
+                name TEXT NOT NULL,
+                matric_number TEXT UNIQUE NOT NULL,
+                department TEXT DEFAULT 'NOT SET'
+            );
+
+            CREATE TABLE IF NOT EXISTS documents (
+                id SERIAL PRIMARY KEY,
+                target_matric TEXT NOT NULL,
+                doc_type TEXT NOT NULL,
+                title TEXT NOT NULL,
+                file_name TEXT NOT NULL,
+                file_type TEXT NOT NULL,
+                file_data TEXT NOT NULL,
+                config_json TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS yellow_files (
+                id SERIAL PRIMARY KEY,
+                student_id INTEGER REFERENCES students(id),
+                status TEXT DEFAULT 'pending',
+                submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                level TEXT,
+                documents_json TEXT
+            );
+        `);
+
+        // 2. Add Default Admin if not exists
+        await db.query(`
+            INSERT INTO users (username, password, role)
+            VALUES ('admin', 'admin123', 'admin')
+            ON CONFLICT (username) DO NOTHING
+        `);
+
+        // 3. Sync Students from JSON
         const fs = require('fs');
         const path = require('path');
         const studentsPath = path.join(__dirname, '../students-list.json');
         
-        if (!fs.existsSync(studentsPath)) {
-            return res.status(404).json({ success: false, message: 'students-list.json not found' });
-        }
-
-        const studentsData = JSON.parse(fs.readFileSync(studentsPath, 'utf8'));
         let addedCount = 0;
+        if (fs.existsSync(studentsPath)) {
+            const studentsData = JSON.parse(fs.readFileSync(studentsPath, 'utf8'));
+            for (const s of studentsData) {
+                const userRes = await db.query(`
+                    INSERT INTO users (username, password, role)
+                    VALUES ($1, $2, 'student')
+                    ON CONFLICT (username) DO UPDATE SET password = EXCLUDED.password
+                    RETURNING id
+                `, [s.matric_number, s.password]);
+                
+                const userId = userRes.rows[0].id;
 
-        for (const s of studentsData) {
-            // 1. Create/Update User entry for login
-            const userRes = await db.query(`
-                INSERT INTO users (username, password, role)
-                VALUES ($1, $2, 'student')
-                ON CONFLICT (username) DO UPDATE 
-                SET password = EXCLUDED.password
-                RETURNING id
-            `, [s.matric_number, s.password]);
-            
-            const userId = userRes.rows[0].id;
-
-            // 2. Create/Update Student profile
-            await db.query(`
-                INSERT INTO students (user_id, name, matric_number, department)
-                VALUES ($1, $2, $3, $4)
-                ON CONFLICT (matric_number) DO UPDATE 
-                SET name = EXCLUDED.name, department = EXCLUDED.department, user_id = EXCLUDED.user_id
-            `, [userId, s.name, s.matric_number, s.department]);
-            
-            addedCount++;
+                await db.query(`
+                    INSERT INTO students (user_id, name, matric_number, department)
+                    VALUES ($1, $2, $3, $4)
+                    ON CONFLICT (matric_number) DO UPDATE 
+                    SET name = EXCLUDED.name, department = EXCLUDED.department, user_id = EXCLUDED.user_id
+                `, [userId, s.name, s.matric_number, s.department]);
+                addedCount++;
+            }
         }
 
         res.json({ 
             success: true, 
-            message: `Cloud database sync complete! Populated ${addedCount} student accounts.`,
-            instruction: 'You can now log in to the portal.'
+            message: 'System initialization complete!',
+            summary: {
+                tables_created: ['users', 'students', 'documents', 'yellow_files'],
+                admin_account: 'Ready (Username: admin)',
+                students_synced: addedCount
+            },
+            instruction: 'The system is now fully operational!'
         });
     } catch (err) {
-        console.error('Sync Error:', err);
-        res.status(500).json({ success: false, message: err.message });
+        console.error('Initialization Error:', err);
+        res.status(500).json({ success: false, message: 'Initialization failed: ' + err.message });
     }
 });
 
