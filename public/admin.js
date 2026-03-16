@@ -686,7 +686,9 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         } catch (err) {
             console.error("Preview render error:", err);
-            alert("Failed to render file preview. Ensure it is a valid image or PDF.");
+            // More descriptive error for the user
+            const errorMsg = err.message || "Unknown error during rendering.";
+            alert(`PDF PREVIEW ERROR: ${errorMsg}\n\nThis usually happens if the PDF is exceptionally large or the browser security settings block the PDF engine. Please try refreshing or using a different browser.`);
         }
     });
 

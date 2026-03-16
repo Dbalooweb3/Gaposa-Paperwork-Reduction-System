@@ -100,16 +100,17 @@ window.appendMessage = function (text, isBot = true, isDocument = false, docData
         const doc = window.cachedDocuments[docData.id];
         
         contentHtml += `
-            <div class="doc-card" style="margin-top: 10px; background: rgba(255,255,255,0.7); padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    <i class="fa-solid fa-file-contract" style="color: #1e3a8a; font-size: 1.2rem;"></i>
+            <div class="doc-card" style="margin-top: 15px; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div style="width: 40px; height: 40px; background: rgba(37, 99, 235, 0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fa-solid fa-file-contract" style="color: var(--splash); font-size: 1.2rem;"></i>
+                    </div>
                     <div style="text-align: left;">
-                        <div style="font-weight: 600; font-size: 0.85rem; color: #1e293b;">${docData.name}</div>
-                        <div style="font-size: 0.75rem; color: #64748b;">${docData.size}</div>
+                        <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);">${docData.name}</div>
+                        <div style="font-size: 0.8rem; color: var(--gray);">${docData.size}</div>
                     </div>
                 </div>
-                <button onclick="viewDocument('${docData.id}')" 
-                        style="background: #1e3a8a; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-weight: 600;">
+                <button class="doc-btn" onclick="viewDocument('${docData.id}')">
                     Preview & View
                 </button>
             </div>
